@@ -1,0 +1,19 @@
+name: Specialist Agent — omniverse-core
+on:
+  workflow_dispatch:
+  push:
+    paths: ["factory-agent.json","factory-agent.py","factory/**",".github/workflows/factory-agent.yml"]
+  schedule:
+    - cron: "37 2 * * 2"
+permissions:
+  contents: read
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 factory-agent.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: specialist-agent-manifest
+          path: agent-output/manifest.json
