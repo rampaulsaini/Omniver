@@ -1,0 +1,61 @@
+name: SHIRMANI Heart-View Supreme Reasoning Layer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: shirmani-continuity-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  continuity-audit:
+    name: Multi-layer continuity audit
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - name: Source inventory layer
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Provenance layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "### Provenance" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Repository: ${GITHUB_REPOSITORY}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit time: $(git log -1 --format='%cI')" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Queue and continuity layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked=$(git ls-files | wc -l | tr -d ' ')
+          workflows=$(find .github/workflows -type f 2>/dev/null | wc -l | tr -d ' ')
+          echo "### Continuity" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tracked files: $tracked" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Workflow files: $workflows" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Trigger: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preservation and QC layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          dirty=$(git status --porcelain | wc -l | tr -d ' ')
+          echo "### Preservation / QC" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Working tree changes after checkout: $dirty" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$dirty" -ne 0 ]; then
+            echo "Unexpected checkout state detected." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "- Source content was not modified by this workflow." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Human verification boundaries remain intact." >> "$GITHUB_STEP_SUMMARY"
